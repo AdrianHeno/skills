@@ -272,12 +272,13 @@ Assemble all answered sections into `CLAUDE.md` using the Agent Context Stack st
 4. Code Style
 5. Current Phase
 6. Desloppify section (see template below)
-7. When to Use Skills (always include — see template below)
-8. Security Boundaries (always include baseline — expand if Section I answers warrant it)
-9. Environment Notes
-10. Monetisation Boundaries (if applicable)
-11. Multi-Agent Workflow (if applicable)
-12. Agent skills block (from `/setup-matt-pocock-skills` output)
+7. Conversation Strategy (always include — see template below)
+8. When to Use Skills (always include — see template below)
+9. Security Boundaries (always include baseline — expand if Section I answers warrant it)
+10. Environment Notes
+11. Monetisation Boundaries (if applicable)
+12. Multi-Agent Workflow (if applicable)
+13. Agent skills block (from `/setup-matt-pocock-skills` output)
 
 #### Desloppify section template
 
@@ -294,6 +295,24 @@ desloppify next   # work through findings as an agent
 Run `desloppify next` and work through findings before moving to the next phase.
 ```
 
+#### Conversation Strategy template (always include)
+
+```markdown
+## Conversation Strategy
+
+Treat this conversation like the main branch in GitHub Flow — it's for planning,
+design decisions, and review, not implementation.
+
+For any task involving meaningful implementation:
+1. Plan and agree the approach here
+2. Use `/handoff` to delegate implementation to a sub-agent
+3. The sub-agent gets the full Agent Context Stack and executes independently
+4. It reports back with what was built, any decisions made, and a PR to review
+
+This keeps the main conversation focused on decisions and prevents context
+compaction from eating the planning context that makes it useful.
+```
+
 #### When to Use Skills template (always include)
 
 ```markdown
@@ -305,6 +324,7 @@ Run `desloppify next` and work through findings before moving to the next phase.
 - **`/diagnose`** — when something is broken and the cause isn't obvious. Don't just start changing code.
 - **`/to-issues`** — when turning a plan, spec, or conversation into tracked GitHub issues.
 - **`/triage`** — when the user asks to review, prioritise, or manage open issues.
+- **`/handoff`** — when starting any meaningful implementation task. Plan here, implement in a sub-agent. Keeps this conversation focused on decisions.
 - **`desloppify next`** — at the end of each phase before marking it complete. Not optional.
 ```
 
