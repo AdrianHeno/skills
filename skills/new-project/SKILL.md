@@ -1,5 +1,5 @@
 ---
-name: init
+name: new-project
 description: Scaffold a new project for Claude — installs skills, sets up desloppify, and interviews the user to produce CLAUDE.md + docs/ following the gw2builds pattern. Use when starting a new project, when asked to "init" or "set up Claude" for a repo, or when CLAUDE.md and docs/ are missing.
 ---
 
