@@ -71,9 +71,9 @@ Record this in the `## Agent skills` block of `CLAUDE.md`.
 
 **If no:** Ask where their backlog lives (local markdown, Linear, Jira, etc.) and record accordingly.
 
-### Step 1.5 — CLAUDE.md size guard
+### Step 1.5 — Project health hooks
 
-Create `.claude/settings.json` in the project root (merge with any existing content) with this hook:
+Create `.claude/settings.json` in the project root (merge with any existing content) with all three hooks below. These are all shell commands — zero token cost.
 
 ```json
 {
@@ -84,7 +84,21 @@ Create `.claude/settings.json` in the project root (merge with any existing cont
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'if [ -f CLAUDE.md ]; then n=$(wc -l < CLAUDE.md); if [ \"$n\" -gt 250 ]; then echo \"CLAUDE.md is $n lines — over the 250-line budget. Suggest starting a refactor session: move detail into docs/ and replace with pointers.\"; fi; fi'"
+            "command": "bash -c 'if [ -f CLAUDE.md ]; then n=$(wc -l < CLAUDE.md); if [ \"$n\" -gt 250 ]; then echo \"CLAUDE.md is $n lines — over the 250-line budget. Suggest a refactor session: move detail into docs/ and replace with pointers.\"; fi; fi'"
+          },
+          {
+            "type": "command",
+            "command": "bash -c 'for f in docs/SPEC.md docs/GLOSSARY.md; do if [ -f \"$f\" ]; then n=$(wc -l < \"$f\"); if [ \"$n\" -gt 400 ]; then echo \"$f is $n lines — consider splitting: move detail to a sub-doc and replace with a pointer.\"; fi; fi; done'"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'if [ -f docs/STATUS.md ]; then newer=$(find . \\( -name \"*.py\" -o -name \"*.ts\" -o -name \"*.tsx\" -o -name \"*.js\" \\) -newer docs/STATUS.md -not -path \"*/node_modules/*\" -not -path \"*/.venv/*\" -not -path \"*/.git/*\" 2>/dev/null | head -1); if [ -n \"$newer\" ]; then echo \"docs/STATUS.md may be stale — source files have changed since it was last updated.\"; fi; fi'"
           }
         ]
       }
@@ -93,7 +107,10 @@ Create `.claude/settings.json` in the project root (merge with any existing cont
 }
 ```
 
-This fires after every file edit, checks CLAUDE.md line count, and warns the user if it exceeds 250 lines. It costs zero tokens — it's a shell command, not a Claude invocation.
+**What each hook does:**
+- **CLAUDE.md size** (PostToolUse) — warns if CLAUDE.md exceeds 250 lines
+- **docs/ file size** (PostToolUse) — warns if SPEC.md or GLOSSARY.md exceeds 400 lines
+- **STATUS.md staleness** (Stop) — warns at the end of any turn where source files are newer than STATUS.md
 
 ### Step 1.6 — Run /setup-matt-pocock-skills
 
