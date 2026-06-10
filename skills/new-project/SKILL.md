@@ -71,7 +71,31 @@ Record this in the `## Agent skills` block of `CLAUDE.md`.
 
 **If no:** Ask where their backlog lives (local markdown, Linear, Jira, etc.) and record accordingly.
 
-### Step 1.5 — Run /setup-matt-pocock-skills
+### Step 1.5 — CLAUDE.md size guard
+
+Create `.claude/settings.json` in the project root (merge with any existing content) with this hook:
+
+```json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'if [ -f CLAUDE.md ]; then n=$(wc -l < CLAUDE.md); if [ \"$n\" -gt 250 ]; then echo \"CLAUDE.md is $n lines — over the 250-line budget. Suggest starting a refactor session: move detail into docs/ and replace with pointers.\"; fi; fi'"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+This fires after every file edit, checks CLAUDE.md line count, and warns the user if it exceeds 250 lines. It costs zero tokens — it's a shell command, not a Claude invocation.
+
+### Step 1.6 — Run /setup-matt-pocock-skills
 
 Run `/setup-matt-pocock-skills` now. This configures the issue tracker, triage labels, and domain doc layout for the engineering skills. Walk through it before continuing.
 
