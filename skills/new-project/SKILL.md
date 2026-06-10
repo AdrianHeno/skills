@@ -1,6 +1,6 @@
 ---
 name: new-project
-description: Scaffold a new project for Claude using Context-Driven Development — installs skills, sets up desloppify, and interviews the user to produce a CLAUDE.md + Agent Context Stack (docs/SPEC.md, GLOSSARY.md, STATUS.md, decisions/). Use when starting a new project, when asked to "init" or "set up Claude" for a repo, or when CLAUDE.md and docs/ are missing.
+description: Scaffold a new project for Claude using Context-Driven Development — installs skills, sets up desloppify, and interviews the user to produce a CLAUDE.md + Agent Context Stack (docs/SPEC.md, GLOSSARY.md, STATUS.md, decisions/). Use when starting a new project, when asked to "init project" or "set up a new project" for a repo, or when CLAUDE.md and docs/ are missing.
 ---
 
 # New Project
@@ -112,7 +112,7 @@ Present each principle below, explain it briefly, and ask whether to include it.
    > *Recommendation: Include for any module with non-trivial logic. Ask the user which parts (all? backend only? simulator/business logic only?) require TDD.*
 
 3. **Deep Modules** — Simple interfaces, complex internals. If the interface is getting complicated, refactor before proceeding.
-   > *Recommendation: Include. Pair it with a concrete example of the project's top-level interface, as gw2builds does with `simulate(build, mode) → SimulationResult`.*
+   > *Recommendation: Include. Pair it with a concrete example of the project's top-level interface.*
 
 4. **Spec Before Code** — For non-trivial modules, propose the interface and wait for approval before implementing.
    > *Recommendation: Include. This principle alone saves enormous rework.*
@@ -188,13 +188,29 @@ Skip if none.
 
 ---
 
+### Section I — Security boundaries (optional)
+
+Ask:
+
+> Does this project handle anything security-sensitive? (user authentication, payments, personal data, public APIs, secrets management)
+
+**If no:** Skip. A minimal baseline will still be written into `CLAUDE.md` unconditionally.
+
+**If yes:** Ask:
+
+> What are the hard security rules Claude should never violate? (e.g. "never log request bodies", "all user input validated at the API boundary", "no secrets in code — use env vars", "auth middleware must never be bypassed for convenience")
+
+Use the answers to write a `## Security Boundaries` section in `CLAUDE.md` below the baseline.
+
+---
+
 ### Section H — Multi-agent workflow (optional)
 
 Ask:
 
 > Do you plan to use parallel Claude Code agents working on isolated git worktrees for this project?
 
-**If yes:** Add the multi-agent rules block (stream ownership, interfaces-first, one class per entity, exit conditions, PR workflow) from the gw2builds template. Ask whether they want `.claude/worktrees/` created now.
+**If yes:** Add the multi-agent rules block (stream ownership, interfaces-first, one class per entity, exit conditions, PR workflow). Ask whether they want `.claude/worktrees/` created now.
 
 **If no:** Skip.
 
@@ -213,10 +229,12 @@ Assemble all answered sections into `CLAUDE.md` using the Agent Context Stack st
 4. Code Style
 5. Current Phase
 6. Desloppify section (see template below)
-7. Environment Notes
-8. Monetisation Boundaries (if applicable)
-9. Multi-Agent Workflow (if applicable)
-10. Agent skills block (from `/setup-matt-pocock-skills` output)
+7. When to Use Skills (always include — see template below)
+8. Security Boundaries (always include baseline — expand if Section I answers warrant it)
+9. Environment Notes
+10. Monetisation Boundaries (if applicable)
+11. Multi-Agent Workflow (if applicable)
+12. Agent skills block (from `/setup-matt-pocock-skills` output)
 
 #### Desloppify section template
 
@@ -231,6 +249,35 @@ desloppify next   # work through findings as an agent
 \```
 
 Run `desloppify next` and work through findings before moving to the next phase.
+```
+
+#### When to Use Skills template (always include)
+
+```markdown
+## When to Use Skills
+
+- **`/grill-with-docs`** — before implementing anything non-trivial. Stress-tests the plan against GLOSSARY.md and docs/decisions/, and updates docs inline as decisions crystallise. Use it before writing code for a new module or feature.
+- **`/improve-codebase-architecture`** — when an interface is getting complicated or a module feels tangled. Run it before starting a new phase, not just reactively.
+- **`/tdd`** — for any business logic, data pipeline, or backend module. Write the failing test first.
+- **`/diagnose`** — when something is broken and the cause isn't obvious. Don't just start changing code.
+- **`/to-issues`** — when turning a plan, spec, or conversation into tracked GitHub issues.
+- **`/triage`** — when the user asks to review, prioritise, or manage open issues.
+- **`desloppify next`** — at the end of each phase before marking it complete. Not optional.
+```
+
+#### Security Boundaries template
+
+Always write the baseline. Expand with project-specific rules from Section I if applicable.
+
+```markdown
+## Security Boundaries
+
+- No secrets, tokens, or credentials in code — use environment variables
+- No sensitive data (tokens, passwords, PII) in logs or error messages
+- Validate all input at system boundaries (user input, external APIs) — trust internal code
+- Never bypass authentication or authorisation as a convenience shortcut
+
+[Project-specific rules from Section I, if any]
 ```
 
 #### Backlog section (if GitHub issues)
