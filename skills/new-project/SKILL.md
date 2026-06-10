@@ -1,11 +1,11 @@
 ---
 name: new-project
-description: Scaffold a new project for Claude — installs skills, sets up desloppify, and interviews the user to produce CLAUDE.md + docs/ following the gw2builds pattern. Use when starting a new project, when asked to "init" or "set up Claude" for a repo, or when CLAUDE.md and docs/ are missing.
+description: Scaffold a new project for Claude using Context-Driven Development — installs skills, sets up desloppify, and interviews the user to produce a CLAUDE.md + Agent Context Stack (docs/SPEC.md, GLOSSARY.md, STATUS.md, decisions/). Use when starting a new project, when asked to "init" or "set up Claude" for a repo, or when CLAUDE.md and docs/ are missing.
 ---
 
-# Init
+# New Project
 
-Scaffold a new project for Claude collaboration. Produces `CLAUDE.md`, `docs/` stubs, and wires up tooling — following the same pattern as the user's reference project (gw2builds).
+Scaffold a new project for Claude collaboration using **Context-Driven Development** — a practice of maintaining an **Agent Context Stack** (CLAUDE.md + structured docs/) that gives Claude durable, phase-aware project context that survives conversation compression and multi-agent handoffs.
 
 Work interactively. Ask one topic at a time, offer a recommendation for each, wait for the answer before moving on.
 
@@ -79,7 +79,7 @@ Run `/setup-matt-pocock-skills` now. This configures the issue tracker, triage l
 
 ## Phase 2 — Interview
 
-Ask one section at a time. For each, present a recommendation modelled on gw2builds, then wait. Adapt the recommendation to what you already know about the project from the repo.
+Ask one section at a time. For each, present a recommendation grounded in Context-Driven Development principles, then wait. Adapt the recommendation to what you already know about the project from the repo.
 
 ---
 
@@ -95,13 +95,13 @@ Then ask:
 
 Use these answers to write the `## What This Project Is` block in `CLAUDE.md` and stub out `docs/SPEC.md`.
 
-**Recommendation to offer:** Point out that gw2builds references `docs/SPEC.md` as a deeper spec Claude reads before any non-trivial task. Suggest they do the same — start with a short spec and grow it.
+**Recommendation to offer:** `docs/SPEC.md` is a core part of the Agent Context Stack — it's the deeper reference Claude reads before any non-trivial task. Start with a short spec and grow it. Without it, agents make architecture assumptions that conflict with your intent.
 
 ---
 
 ### Section B — Working principles
 
-Present each principle below, explain it briefly, and ask whether to include it. Offer the gw2builds version as the default wording. The user can accept as-is, edit, or skip.
+Present each principle below, explain it briefly, and ask whether to include it. These are the core Context-Driven Development principles — offer the default wording for each. The user can accept as-is, edit, or skip.
 
 **Principles to offer (in order):**
 
@@ -206,7 +206,7 @@ Once all sections are answered, produce:
 
 ### `CLAUDE.md`
 
-Assemble all answered sections into `CLAUDE.md` using the gw2builds structure:
+Assemble all answered sections into `CLAUDE.md` using the Agent Context Stack structure:
 1. What This Project Is
 2. Working Principles (only the ones the user opted in to)
 3. What To Do Before Starting Any Task (checklist of docs they confirmed)
