@@ -220,6 +220,8 @@ Ask:
 
 Once all sections are answered, produce:
 
+**Length budget: keep the generated `CLAUDE.md` under 200 lines.** It is loaded as persistent context in every session — every line costs context window. Write principles as tight rules (2-3 lines each), not essays. If a section is getting long, move the detail to the relevant `docs/` file and add a pointer instead.
+
 ### `CLAUDE.md`
 
 Assemble all answered sections into `CLAUDE.md` using the Agent Context Stack structure:
