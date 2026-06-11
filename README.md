@@ -1,6 +1,8 @@
 # skills
 
-Claude Code skills built around **Context-Driven Development** — a pattern for AI-assisted software development that applies proven computer science principles to the problem of keeping an agent reliably informed across sessions, team members, and time.
+Skills built around **Context-Driven Development** — a pattern for AI-assisted software development that applies proven computer science principles to the problem of keeping an agent reliably informed across sessions, team members, and time.
+
+Supports Claude Code, Cursor, GitHub Copilot, Windsurf, and Codex.
 
 ## Install
 
@@ -34,7 +36,7 @@ It's not a new idea. It applies well-established computer science and software e
 
 DDD's core insight is that a shared vocabulary between engineers and domain experts is a first-class engineering concern, not a documentation afterthought. The same problem is acute with AI agents: without a glossary, every new session risks coining a new synonym for an existing concept. Terminology drift compounds silently across hundreds of interactions.
 
-CDD makes the domain glossary (`docs/GLOSSARY.md`) a non-negotiable artefact and encodes a rule in `CLAUDE.md`: use the exact terms from the glossary. No synonyms.
+CDD makes the domain glossary (`docs/GLOSSARY.md`) a non-negotiable artefact and encodes a rule in `AGENTS.md`: use the exact terms from the glossary. No synonyms.
 
 ### Architecture Decision Records — from Nygard (2011)
 
@@ -52,7 +54,7 @@ CDD encodes this as the **Design Delegation** principle: the human owns architec
 
 A well-structured Agent Context Stack separates concerns that belong to different audiences and timescales:
 
-- `CLAUDE.md` — non-negotiable working principles and pre-task checklist (session-level)
+- `AGENTS.md` — non-negotiable working principles and pre-task checklist (session-level)
 - `docs/SPEC.md` — architecture and interfaces (module-level)
 - `docs/GLOSSARY.md` — domain language (project-level)
 - `docs/STATUS.md` — current phase and health metrics (phase-level)
@@ -69,8 +71,9 @@ Defensive programming anticipates failure modes and adds guards. CDD applies the
 ## The Agent Context Stack
 
 ```
-CLAUDE.md              # working principles, pre-task checklist, code style, current phase,
-                       # skill guidance, security boundaries
+AGENTS.md              # working principles, pre-task checklist, code style, current phase,
+                       # skill guidance, security boundaries — read by all agents
+CLAUDE.md              # symlink to AGENTS.md (Claude Code auto-loads this filename)
 docs/
   SPEC.md              # architecture and key interfaces — read before any non-trivial task
   GLOSSARY.md          # domain terms (ubiquitous language) — no synonyms
@@ -78,7 +81,7 @@ docs/
   BACKLOG.md           # queued work items (or GitHub Issues)
   decisions/           # numbered ADRs — resolved design choices
 .claude/
-  settings.json        # health hooks: size guards + STATUS.md staleness check
+  settings.json        # health hooks: size guards + STATUS.md staleness check (Claude Code)
 ```
 
 ---
@@ -87,28 +90,32 @@ docs/
 
 ### `/new-project`
 
-Scaffolds a new project using Context-Driven Development. Installs [mattpocock/skills](https://github.com/mattpocock/skills), sets up [desloppify](https://github.com/peteromallet/desloppify) (supports 29 languages), and interviews you to produce the full Agent Context Stack.
+Scaffolds a new project using Context-Driven Development. Asks which agent(s) you use, installs agent-specific tooling, sets up [desloppify](https://github.com/peteromallet/desloppify) (supports 29 languages), and interviews you to produce the full Agent Context Stack.
+
+**Supports:** Claude Code, Cursor, GitHub Copilot, Windsurf, Codex (select multiple)
 
 **What it does:**
 
 1. Asks for your GitHub repo URL
-2. Installs mattpocock/skills via `npx skills@latest add`
-3. Installs desloppify, runs an initial scan to establish a quality baseline, and installs the full desloppify workflow guide for Claude
-4. Asks if GitHub Issues should be the backlog (`"add X to the backlog"` → `gh issue create`)
-5. Sets up three project health hooks in `.claude/settings.json` — zero token cost, shell only:
-   - Warns if `CLAUDE.md` exceeds 250 lines
+2. Asks which AI agent(s) you're using — gates agent-specific setup on the answer
+3. Installs [mattpocock/skills](https://github.com/mattpocock/skills) *(Claude Code only)*
+4. Installs desloppify, runs an initial scan to establish a quality baseline, and installs the desloppify workflow guide for each selected agent
+5. Asks if GitHub Issues should be the backlog (`"add X to the backlog"` → `gh issue create`)
+6. Sets up three project health hooks in `.claude/settings.json` *(Claude Code only)* — zero token cost, shell only:
+   - Warns if `AGENTS.md` or `CLAUDE.md` exceeds 250 lines
    - Warns if `docs/SPEC.md` or `docs/GLOSSARY.md` exceeds 400 lines
    - Warns at end of each session if source files are newer than `docs/STATUS.md`
-6. Runs `/setup-matt-pocock-skills` to configure issue tracker and triage labels
-7. Interviews you section by section to fill out `CLAUDE.md`:
+7. Runs `/setup-matt-pocock-skills` to configure issue tracker and triage labels *(Claude Code only)*
+8. Interviews you section by section to fill out `AGENTS.md`:
    - Project description and stack
    - Which working principles to adopt (each with a recommendation)
-   - Which docs Claude reads before every task
+   - Which docs the agent reads before every task
    - Code style (formatters, linters, type checking)
    - Current phase
    - Security boundaries
    - Environment notes
-   - Multi-agent workflow (optional)
-8. Writes a `## When to Use Skills` section into `CLAUDE.md` so Claude knows when to proactively reach for `/grill-with-docs`, `/improve-codebase-architecture`, `/tdd`, `/diagnose`, `/to-issues`, `/triage`, and `desloppify next`
-9. Creates all `docs/` stubs and `docs/decisions/` with an ADR template
-10. Offers to commit everything
+   - Multi-agent worktree workflow *(Claude Code only, optional)*
+9. Writes `## Conversation Strategy` and `## When to Use Skills` into `AGENTS.md` *(Claude Code only)*
+10. Creates `AGENTS.md` as the primary file; creates `CLAUDE.md` as a symlink to it *(Claude Code only)*
+11. Creates all `docs/` stubs and `docs/decisions/` with an ADR template
+12. Offers to commit everything
