@@ -69,6 +69,12 @@ Then install the workflow guide for each selected agent. The desloppify agent na
 
 Run `update-skill` for each agent in `AGENTS`. This installs the full desloppify workflow guide so each agent knows the exact fix loop.
 
+Add `.desloppify/` to `.gitignore` (it contains local state that shouldn't be committed):
+
+```bash
+echo ".desloppify/" >> .gitignore
+```
+
 After installing, exclude any directories that shouldn't be scanned (build output, vendor, generated code, worktrees) — check with the user before excluding anything non-obvious. Then run:
 
 ```bash
