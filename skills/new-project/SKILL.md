@@ -108,13 +108,15 @@ Record this in the `## Agent skills` block of `AGENTS.md`.
 
 **Skip this step if `IS_CLAUDE_CODE` is false.**
 
-Copy `templates/claude-settings-hooks.json` (in this skill's directory) to the project's `.claude/settings.json`. If the project already has a `.claude/settings.json`, merge the `hooks` arrays instead of overwriting. All four hooks are shell commands — zero token cost.
+Copy `templates/claude-settings-hooks.json` (in this skill's directory) to the project's `.claude/settings.json`. If the project already has a `.claude/settings.json`, merge the `hooks` arrays instead of overwriting. All hooks are shell commands — zero token cost. They defend against the two ways context rots: bloat (size guards) and staleness (freshness guards).
 
 **What each hook does:**
+- **STATUS.md staleness** (SessionStart + Stop) — compares git history: warns when source has been committed since STATUS.md was last updated. Fires at session start (when stale context would mis-brief the agent) and at turn end (when the agent can still fix it). Git-based, so it survives fresh clones and worktrees, unlike file timestamps.
+- **STATUS.md freshness date** (SessionStart) — warns when the first `YYYY-MM-DD` date in STATUS.md (its "as of" stamp) is more than 14 days old.
 - **AGENTS.md / CLAUDE.md size** (PostToolUse) — warns if either exceeds 250 lines
 - **docs/ file size** (PostToolUse) — warns if SPEC.md or GLOSSARY.md exceeds 400 lines
 - **STATUS.md size** (PostToolUse) — warns if STATUS.md exceeds 150 lines; it must stay a one-screen dashboard, with dated content moved to CHANGELOG.md
-- **STATUS.md staleness** (Stop) — warns at the end of any turn where source files are newer than STATUS.md
+- **Dead pointers** (PostToolUse) — extracts backtick-quoted file paths from AGENTS.md and docs/*.md and warns about any that don't exist on disk. Catches docs referencing paths that were moved, renamed, or never existed.
 
 ### Step 1.7 — Run /setup-matt-pocock-skills (Claude Code only)
 
@@ -308,16 +310,18 @@ Assemble all answered sections into `AGENTS.md` using the Agent Context Stack st
 5. Code Style
 6. Current Phase (pointer to STATUS.md — never duplicated numbers)
 7. Desloppify section
-8. Conversation Strategy (Claude Code only)
-9. When to Use Skills (Claude Code only)
-10. Security Boundaries (always include baseline — expand if Section H answers warrant it)
-11. Environment Notes
-12. Monetisation Boundaries (if applicable)
-13. Multi-Agent Workflow (Claude Code only, if applicable)
-14. PR Review (if Section J answered yes)
-15. Agent skills block (Claude Code only — from `/setup-matt-pocock-skills` output)
+8. Phase-End Truth-Up
+9. Conversation Strategy (Claude Code only)
+10. When to Use Skills (Claude Code only)
+11. Memory vs the Agent Context Stack (Claude Code only)
+12. Security Boundaries (always include baseline — expand if Section H answers warrant it)
+13. Environment Notes
+14. Monetisation Boundaries (if applicable)
+15. Multi-Agent Workflow (Claude Code only, if applicable)
+16. PR Review (if Section J answered yes)
+17. Agent skills block (Claude Code only — from `/setup-matt-pocock-skills` output)
 
-Sections 6–10, 13, and 14 have verbatim templates in `templates/agents-md-sections.md` (see the Templates section below). If GitHub Issues is the backlog, add the backlog line from the same file to section 4.
+Sections 6–12, 15, and 16 have verbatim templates in `templates/agents-md-sections.md` (see the Templates section below). If GitHub Issues is the backlog, add the backlog line from the same file to section 4.
 
 ### `CLAUDE.md` (Claude Code only)
 
@@ -339,7 +343,7 @@ All verbatim artefacts live as real files next to this SKILL.md — read them, s
 
 | Template | Written to | When |
 |---|---|---|
-| `templates/agents-md-sections.md` | sections of `AGENTS.md` | always — contains Current Phase, Desloppify, Conversation Strategy*, When to Use Skills*, Security Boundaries, Multi-Agent Workflow*, PR Review, and the GitHub-Issues backlog line |
+| `templates/agents-md-sections.md` | sections of `AGENTS.md` | always — contains Current Phase, Desloppify, Phase-End Truth-Up, Conversation Strategy*, When to Use Skills*, Memory vs the Stack*, Security Boundaries, Multi-Agent Workflow*, PR Review, and the GitHub-Issues backlog line |
 | `templates/claude-settings-hooks.json` | `.claude/settings.json` | Claude Code only (Step 1.6) |
 | `templates/docs/SPEC.md` | `docs/SPEC.md` | if confirmed in Section C |
 | `templates/docs/GLOSSARY.md` | `docs/GLOSSARY.md` | if confirmed in Section C |
@@ -352,7 +356,7 @@ All verbatim artefacts live as real files next to this SKILL.md — read them, s
 
 *Claude Code only. Sections marked optional in `agents-md-sections.md` are skipped if the user didn't opt in.
 
-Replace `[Project Name]` / `[project]` with the actual name in every copied file. In the Multi-Agent Workflow section, fill in the project's shared-file list and full-CI command. In the Security Boundaries section, always write the baseline; append the Section H answers if any.
+Replace `[Project Name]` / `[project]` with the actual name in every copied file, and `[YYYY-MM-DD]` in STATUS.md with today's date. In the Multi-Agent Workflow section, fill in the project's shared-file list and full-CI command. In the Security Boundaries section, always write the baseline; append the Section H answers if any.
 
 ### Commit
 

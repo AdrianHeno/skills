@@ -37,6 +37,26 @@ Run `desloppify next` and work through findings before moving to the next phase.
 
 ---
 
+## Phase-End Truth-Up (always)
+
+````markdown
+## Phase-End Truth-Up
+
+At the end of each phase, before marking it complete, verify every factual
+claim in `AGENTS.md` and `docs/STATUS.md` against reality:
+
+- Run the test suite and update the count in STATUS.md
+- Verify every file path mentioned in AGENTS.md and docs/ still exists
+- Run each command in Environment Notes and Code Style — do they still work?
+- Update the "as of" date in STATUS.md
+- Move anything dated out of STATUS.md into CHANGELOG.md
+
+Stale context is worse than no context — an agent acting on stale numbers is
+confidently wrong.
+````
+
+---
+
 ## Conversation Strategy (Claude Code only)
 
 ````markdown
@@ -70,6 +90,28 @@ compaction from eating the planning context that makes it useful.
 - **`/triage`** — when the user asks to review, prioritise, or manage open issues.
 - **`/handoff`** — when starting any meaningful implementation task. Plan here, implement in a sub-agent. Keeps this conversation focused on decisions.
 - **`desloppify next`** — at the end of each phase before marking it complete. Not optional.
+````
+
+---
+
+## Memory vs the Agent Context Stack (Claude Code only)
+
+````markdown
+## Memory vs the Agent Context Stack
+
+Claude Code's harness memory is private to one agent; this stack is shared,
+git-versioned, and PR-reviewed. The boundary:
+
+- **Stack (files)** — anything shared, durable, or decision-shaping: domain
+  terms, architecture decisions, project status, conventions, gotchas that
+  affect any contributor.
+- **Memory (private)** — personal user preferences, and provisional
+  observations not yet validated.
+
+Memory is a staging area, not a second home. When a private observation turns
+out to matter to others, promote it into the relevant `docs/` file via a normal
+reviewed change and delete the memory copy. On any conflict between memory and
+the stack, the stack wins — it was reviewed; memory wasn't.
 ````
 
 ---

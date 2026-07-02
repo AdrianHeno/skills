@@ -9,7 +9,10 @@ that accretes history stops being loadable context and starts being noise.
 
 ---
 
-## Current numbers
+## Current numbers (as of [YYYY-MM-DD])
+
+Update the as-of date every time this file changes — a session-start hook warns
+when it is more than 14 days old.
 
 | Metric | Value |
 |---|---|
