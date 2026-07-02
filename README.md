@@ -71,17 +71,22 @@ Defensive programming anticipates failure modes and adds guards. CDD applies the
 ## The Agent Context Stack
 
 ```
-AGENTS.md              # working principles, pre-task checklist, code style, current phase,
-                       # skill guidance, security boundaries — read by all agents
+AGENTS.md              # working principles, load-bearing invariants, pre-task checklist,
+                       # code style, current phase (pointer only), skill guidance,
+                       # security boundaries — read by all agents
 CLAUDE.md              # symlink to AGENTS.md (Claude Code auto-loads this filename)
 docs/
   SPEC.md              # architecture and key interfaces — read before any non-trivial task
   GLOSSARY.md          # domain terms (ubiquitous language) — no synonyms
-  STATUS.md            # current phase, test counts, desloppify score
+  STATUS.md            # one-screen dashboard: phase, test counts, desloppify score
+  CHANGELOG.md         # dated session narratives and fix logs — keeps STATUS.md one screen
   BACKLOG.md           # queued work items (or GitHub Issues)
   decisions/           # numbered ADRs — resolved design choices
+  PR-REVIEW-CHECKLIST.md  # domain invariants a spawned reviewer checks per PR (optional)
 .claude/
   settings.json        # health hooks: size guards + STATUS.md staleness check (Claude Code)
+.cursor/
+  rules/*.mdc          # project rules for Cursor Chat/Composer/Bugbot (Cursor only, optional)
 ```
 
 ---
@@ -101,20 +106,23 @@ Scaffolds a new project using Context-Driven Development. Asks which agent(s) yo
 3. Installs [mattpocock/skills](https://github.com/mattpocock/skills) *(Claude Code only)*
 4. Installs desloppify, runs an initial scan to establish a quality baseline, and installs the desloppify workflow guide for each selected agent
 5. Asks if GitHub Issues should be the backlog (`"add X to the backlog"` → `gh issue create`)
-6. Sets up three project health hooks in `.claude/settings.json` *(Claude Code only)* — zero token cost, shell only:
+6. Sets up four project health hooks in `.claude/settings.json` *(Claude Code only)* — zero token cost, shell only:
    - Warns if `AGENTS.md` or `CLAUDE.md` exceeds 250 lines
    - Warns if `docs/SPEC.md` or `docs/GLOSSARY.md` exceeds 400 lines
+   - Warns if `docs/STATUS.md` exceeds 150 lines (dated history belongs in `docs/CHANGELOG.md`)
    - Warns at end of each session if source files are newer than `docs/STATUS.md`
 7. Runs `/setup-matt-pocock-skills` to configure issue tracker and triage labels *(Claude Code only)*
 8. Interviews you section by section to fill out `AGENTS.md`:
    - Project description and stack
    - Which working principles to adopt (each with a recommendation)
+   - Load-bearing invariants — the 1–3 properties that must never break
    - Which docs the agent reads before every task
    - Code style (formatters, linters, type checking)
-   - Current phase
+   - Current phase (recorded as a pointer to `docs/STATUS.md` — numbers are never duplicated into `AGENTS.md`)
    - Security boundaries
    - Environment notes
-   - Multi-agent worktree workflow *(Claude Code only, optional)*
+   - Multi-agent worktree workflow *(Claude Code only, optional)* — battle-tested rules: PR-before-long-validation, explicit-path staging, append-only shared files, honest deferral
+   - Two-layer PR review *(optional)* — a review bot for generic bugs + a domain checklist (`docs/PR-REVIEW-CHECKLIST.md`) run by a spawned read-only agent; generates a `.cursor/rules/` file for Cursor users
 9. Writes `## Conversation Strategy` and `## When to Use Skills` into `AGENTS.md` *(Claude Code only)*
 10. Creates `AGENTS.md` as the primary file; creates `CLAUDE.md` as a symlink to it *(Claude Code only)*
 11. Creates all `docs/` stubs and `docs/decisions/` with an ADR template

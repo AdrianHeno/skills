@@ -108,43 +108,12 @@ Record this in the `## Agent skills` block of `AGENTS.md`.
 
 **Skip this step if `IS_CLAUDE_CODE` is false.**
 
-Create `.claude/settings.json` in the project root (merge with any existing content) with all three hooks below. These are all shell commands — zero token cost.
-
-```json
-{
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash -c 'for f in AGENTS.md CLAUDE.md; do if [ -f \"$f\" ]; then n=$(wc -l < \"$f\"); if [ \"$n\" -gt 250 ]; then echo \"$f is $n lines — over the 250-line budget. Suggest a refactor session: move detail into docs/ and replace with pointers.\"; fi; fi; done'"
-          },
-          {
-            "type": "command",
-            "command": "bash -c 'for f in docs/SPEC.md docs/GLOSSARY.md; do if [ -f \"$f\" ]; then n=$(wc -l < \"$f\"); if [ \"$n\" -gt 400 ]; then echo \"$f is $n lines — consider splitting: move detail to a sub-doc and replace with a pointer.\"; fi; fi; done'"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash -c 'if [ -f docs/STATUS.md ]; then newer=$(find . \\( -name \"*.py\" -o -name \"*.ts\" -o -name \"*.tsx\" -o -name \"*.js\" \\) -newer docs/STATUS.md -not -path \"*/node_modules/*\" -not -path \"*/.venv/*\" -not -path \"*/.git/*\" 2>/dev/null | head -1); if [ -n \"$newer\" ]; then echo \"docs/STATUS.md may be stale — source files have changed since it was last updated.\"; fi; fi'"
-          }
-        ]
-      }
-    ]
-  }
-}
-```
+Copy `templates/claude-settings-hooks.json` (in this skill's directory) to the project's `.claude/settings.json`. If the project already has a `.claude/settings.json`, merge the `hooks` arrays instead of overwriting. All four hooks are shell commands — zero token cost.
 
 **What each hook does:**
 - **AGENTS.md / CLAUDE.md size** (PostToolUse) — warns if either exceeds 250 lines
 - **docs/ file size** (PostToolUse) — warns if SPEC.md or GLOSSARY.md exceeds 400 lines
+- **STATUS.md size** (PostToolUse) — warns if STATUS.md exceeds 150 lines; it must stay a one-screen dashboard, with dated content moved to CHANGELOG.md
 - **STATUS.md staleness** (Stop) — warns at the end of any turn where source files are newer than STATUS.md
 
 ### Step 1.7 — Run /setup-matt-pocock-skills (Claude Code only)
@@ -201,6 +170,14 @@ Present each principle below, explain it briefly, and ask whether to include it.
 6. **Vertical Slices** — Build end-to-end in thin slices. Always the thinnest slice that produces something testable and demonstrable.
    > *Recommendation: Include if the project has multiple layers (frontend + backend, pipeline + UI, etc.).*
 
+After the principles, ask:
+
+> Does this project have 1–3 **load-bearing invariants** — properties that must never break, because the product's credibility depends on them? (e.g. "no simulated result may exceed 120% of the published benchmark", "all money math in integer cents", "user data is never mutated by read paths")
+
+**If yes:** Record them for a `## Load-Bearing Invariants` section near the top of `AGENTS.md`. For each invariant, capture: the rule, where it is enforced (test file, constant, gate), and what to do on violation (revert or gate before merging — never ship a breach). These are the highest-value lines in the whole file — a fresh agent that knows the invariants can be trusted with far more autonomy.
+
+**If no:** Skip — but suggest revisiting once the project has a quality bar users rely on.
+
 ---
 
 ### Section C — Before starting any task
@@ -212,7 +189,7 @@ Ask:
 Offer:
 - `docs/SPEC.md` — architecture and design decisions
 - `docs/GLOSSARY.md` — domain terms
-- `docs/STATUS.md` — current phase, test counts, health score
+- `docs/STATUS.md` — current phase, test counts, health score (a `docs/CHANGELOG.md` is created alongside it to hold dated history, so STATUS.md stays a one-screen dashboard)
 - `docs/BACKLOG.md` — queued work items (or note that backlog is in GitHub Issues)
 - `docs/decisions/` — numbered design decision docs (ADR-style)
 
@@ -242,7 +219,9 @@ Ask:
 
 > What phase or milestone is the project at right now? (One sentence is fine — e.g. "Phase 1 — initial data pipeline" or "MVP feature complete, pre-launch polish")
 
-**Recommendation:** Record this as a `## Current Phase` section in `AGENTS.md` with a pointer to `docs/STATUS.md` for detail. Update it at the end of each phase.
+**Recommendation:** Record this as a `## Current Phase` section in `AGENTS.md` with a pointer to `docs/STATUS.md` for detail.
+
+**Hard rule — pointer, not copy:** the section must contain the one-sentence phase and the pointer only. Never duplicate test counts, benchmark numbers, or feature status into `AGENTS.md` — duplicated numbers go stale within weeks and then actively mis-brief every fresh session (an agent working from stale numbers is worse than one with no numbers). `docs/STATUS.md` is the single source of truth. Use the "Current Phase" template in `templates/agents-md-sections.md`.
 
 ---
 
@@ -290,7 +269,24 @@ Ask:
 
 > Do you plan to use parallel Claude Code agents working on isolated git worktrees for this project?
 
-**If yes:** Add the multi-agent rules block (stream ownership, interfaces-first, one class per entity, exit conditions, PR workflow). Ask whether they want `.claude/worktrees/` created now.
+**If yes:** Add the Multi-Agent Workflow section from `templates/agents-md-sections.md` — a set of battle-tested rules covering scope ownership, shared-file discipline, exit conditions, and git hygiene. Adapt the shared-file list and CI command to this project. Ask whether they want `.claude/worktrees/` created now.
+
+**If no:** Skip.
+
+---
+
+### Section J — PR review (optional, GitHub projects)
+
+**Skip this section if the project doesn't use pull requests.**
+
+Ask:
+
+> Do you want a two-layer PR review setup? Author-merged PRs with zero reviews are the default failure mode of solo + agent development. The two layers: (1) an automated review bot for generic bug patterns (e.g. Cursor Bugbot via the Cursor GitHub App — a one-time dashboard action), and (2) a domain checklist (`docs/PR-REVIEW-CHECKLIST.md`) that a read-only agent runs against each non-trivial PR to check the project-specific invariants no generic bot knows.
+
+**If yes:**
+- Create `docs/PR-REVIEW-CHECKLIST.md` from `templates/docs/PR-REVIEW-CHECKLIST.md`, seeding the blocking items from the load-bearing invariants captured in Section B and any architecture rules from `docs/SPEC.md`.
+- If Cursor is in `AGENTS`, also create `.cursor/rules/<project>-domain.mdc` from `templates/cursor-domain.mdc` — Cursor's project-rules file, read automatically by Chat, Composer, and Bugbot on PRs. Keep it terse: it loads into every Cursor AI interaction. Note that enabling Bugbot itself is a Cursor dashboard action, not a CLI step.
+- Add the "PR Review" section from `templates/agents-md-sections.md` to `AGENTS.md`: don't merge until the bot has run and blocking concerns are addressed; spawn the checklist reviewer for PRs touching core/shared modules.
 
 **If no:** Skip.
 
@@ -306,18 +302,22 @@ Once all sections are answered, produce:
 
 Assemble all answered sections into `AGENTS.md` using the Agent Context Stack structure:
 1. What This Project Is
-2. Working Principles (only the ones the user opted in to)
-3. What To Do Before Starting Any Task (checklist of docs they confirmed)
-4. Code Style
-5. Current Phase
-6. Desloppify section (see template below)
-7. Conversation Strategy (Claude Code only — see template below)
-8. When to Use Skills (Claude Code only — see template below)
-9. Security Boundaries (always include baseline — expand if Section H answers warrant it)
-10. Environment Notes
-11. Monetisation Boundaries (if applicable)
-12. Multi-Agent Workflow (Claude Code only, if applicable)
-13. Agent skills block (Claude Code only — from `/setup-matt-pocock-skills` output)
+2. Load-Bearing Invariants (if captured in Section B — keep near the top)
+3. Working Principles (only the ones the user opted in to)
+4. What To Do Before Starting Any Task (checklist of docs they confirmed)
+5. Code Style
+6. Current Phase (pointer to STATUS.md — never duplicated numbers)
+7. Desloppify section
+8. Conversation Strategy (Claude Code only)
+9. When to Use Skills (Claude Code only)
+10. Security Boundaries (always include baseline — expand if Section H answers warrant it)
+11. Environment Notes
+12. Monetisation Boundaries (if applicable)
+13. Multi-Agent Workflow (Claude Code only, if applicable)
+14. PR Review (if Section J answered yes)
+15. Agent skills block (Claude Code only — from `/setup-matt-pocock-skills` output)
+
+Sections 6–10, 13, and 14 have verbatim templates in `templates/agents-md-sections.md` (see the Templates section below). If GitHub Issues is the backlog, add the backlog line from the same file to section 4.
 
 ### `CLAUDE.md` (Claude Code only)
 
@@ -333,161 +333,32 @@ If the filesystem doesn't support symlinks (e.g. Windows without dev mode), copy
 
 ---
 
-#### Desloppify section template
+### Templates — `templates/` in this skill's directory
 
-```markdown
-## Desloppify (Quality Review)
+All verbatim artefacts live as real files next to this SKILL.md — read them, substitute `[bracketed]` placeholders, and write them into the project. Do not improvise structure; the templates are the spec.
 
-Run after completing each development phase:
-\```bash
-desloppify scan
-desloppify score
-desloppify next   # work through findings as an agent
-\```
-
-Run `desloppify next` and work through findings before moving to the next phase.
-```
-
-#### Conversation Strategy template (Claude Code only)
-
-```markdown
-## Conversation Strategy
-
-Treat this conversation like the main branch in GitHub Flow — it's for planning,
-design decisions, and review, not implementation.
-
-For any task involving meaningful implementation:
-1. Plan and agree the approach here
-2. Use `/handoff` to delegate implementation to a sub-agent
-3. The sub-agent gets the full Agent Context Stack and executes independently
-4. It reports back with what was built, any decisions made, and a PR to review
-
-This keeps the main conversation focused on decisions and prevents context
-compaction from eating the planning context that makes it useful.
-```
-
-#### When to Use Skills template (Claude Code only)
-
-```markdown
-## When to Use Skills
-
-- **`/grill-with-docs`** — before implementing anything non-trivial. Stress-tests the plan against GLOSSARY.md and docs/decisions/, and updates docs inline as decisions crystallise. Use it before writing code for a new module or feature.
-- **`/improve-codebase-architecture`** — when an interface is getting complicated or a module feels tangled. Run it before starting a new phase, not just reactively.
-- **`/tdd`** — for any business logic, data pipeline, or backend module. Write the failing test first.
-- **`/diagnose`** — when something is broken and the cause isn't obvious. Don't just start changing code.
-- **`/to-issues`** — when turning a plan, spec, or conversation into tracked GitHub issues.
-- **`/triage`** — when the user asks to review, prioritise, or manage open issues.
-- **`/handoff`** — when starting any meaningful implementation task. Plan here, implement in a sub-agent. Keeps this conversation focused on decisions.
-- **`desloppify next`** — at the end of each phase before marking it complete. Not optional.
-```
-
-#### Security Boundaries template
-
-Always write the baseline. Expand with project-specific rules from Section H if applicable.
-
-```markdown
-## Security Boundaries
-
-- No secrets, tokens, or credentials in code — use environment variables
-- No sensitive data (tokens, passwords, PII) in logs or error messages
-- Validate all input at system boundaries (user input, external APIs) — trust internal code
-- Never bypass authentication or authorisation as a convenience shortcut
-
-[Project-specific rules from Section H, if any]
-```
-
-#### Backlog section (if GitHub issues)
-
-Add to the "What To Do Before Starting Any Task" section:
-
-```markdown
-**Backlog:** Tracked in GitHub Issues. To add an item mid-conversation, say "add [description] to the backlog" — the agent will run `gh issue create --repo OWNER/REPO --title "..." --body "..."`.
-```
-
-### `docs/` stubs
-
-For each doc the user confirmed, create a stub:
-
-**`docs/SPEC.md`**
-```markdown
-# [Project Name] — Specification
-
-This file is the source of truth for architecture decisions and module interfaces.
-Read it before building anything non-trivial.
-
-## Architecture
-
-[To be filled in]
-
-## Key Interfaces
-
-[To be filled in]
-```
-
-**`docs/GLOSSARY.md`**
-```markdown
-# [Project Name] — Glossary
-
-Authoritative reference for domain terms. Use these terms exactly as written in code, tests, comments, and prompts. Do not invent synonyms.
-
----
-
-[Terms to be added]
-```
-
-**`docs/STATUS.md`**
-```markdown
-# [Project Name] — Project Status
-
-Tracks current phase, test counts, and health score.
-Update when phases complete or numbers change.
-
----
-
-## Current numbers
-
-| Metric | Value |
-|---|---|
-| Tests passing | — |
-| Desloppify strict | [from initial scan] |
-| Phase | [Phase 1] |
-```
-
-**`docs/BACKLOG.md`** (only if not using GitHub Issues)
-```markdown
-# [Project Name] — Backlog
-
-Queued work items.
-
-| Priority | Item | Notes |
+| Template | Written to | When |
 |---|---|---|
-```
+| `templates/agents-md-sections.md` | sections of `AGENTS.md` | always — contains Current Phase, Desloppify, Conversation Strategy*, When to Use Skills*, Security Boundaries, Multi-Agent Workflow*, PR Review, and the GitHub-Issues backlog line |
+| `templates/claude-settings-hooks.json` | `.claude/settings.json` | Claude Code only (Step 1.6) |
+| `templates/docs/SPEC.md` | `docs/SPEC.md` | if confirmed in Section C |
+| `templates/docs/GLOSSARY.md` | `docs/GLOSSARY.md` | if confirmed in Section C |
+| `templates/docs/STATUS.md` | `docs/STATUS.md` | if confirmed in Section C |
+| `templates/docs/CHANGELOG.md` | `docs/CHANGELOG.md` | always created alongside STATUS.md |
+| `templates/docs/BACKLOG.md` | `docs/BACKLOG.md` | only if NOT using GitHub Issues |
+| `templates/docs/decisions/000-template.md` | `docs/decisions/000-template.md` | if confirmed in Section C |
+| `templates/docs/PR-REVIEW-CHECKLIST.md` | `docs/PR-REVIEW-CHECKLIST.md` | if Section J answered yes — seed blocking items from the Section B invariants |
+| `templates/cursor-domain.mdc` | `.cursor/rules/<project>-domain.mdc` | if Section J answered yes AND Cursor in `AGENTS` |
 
-**`docs/decisions/`** — create the folder and a `000-template.md`:
-```markdown
-# [NNN] — [Decision Title]
+*Claude Code only. Sections marked optional in `agents-md-sections.md` are skipped if the user didn't opt in.
 
-**Date:** [YYYY-MM-DD]
-**Status:** Accepted
-
-## Context
-
-[What is the situation that led to this decision?]
-
-## Decision
-
-[What was decided?]
-
-## Consequences
-
-[What are the trade-offs?]
-```
+Replace `[Project Name]` / `[project]` with the actual name in every copied file. In the Multi-Agent Workflow section, fill in the project's shared-file list and full-CI command. In the Security Boundaries section, always write the baseline; append the Section H answers if any.
 
 ### Commit
 
-Once files are written, offer to run:
+Once files are written, offer to run (include `.cursor/` only if it was created):
 ```bash
-git add AGENTS.md CLAUDE.md docs/ .claude/
+git add AGENTS.md CLAUDE.md docs/ .claude/ .cursor/
 git commit -m "chore: add AGENTS.md and docs scaffolding"
 ```
 

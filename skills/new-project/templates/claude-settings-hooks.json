@@ -1,0 +1,33 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'for f in AGENTS.md CLAUDE.md; do if [ -f \"$f\" ]; then n=$(wc -l < \"$f\"); if [ \"$n\" -gt 250 ]; then echo \"$f is $n lines — over the 250-line budget. Suggest a refactor session: move detail into docs/ and replace with pointers.\"; fi; fi; done'"
+          },
+          {
+            "type": "command",
+            "command": "bash -c 'for f in docs/SPEC.md docs/GLOSSARY.md; do if [ -f \"$f\" ]; then n=$(wc -l < \"$f\"); if [ \"$n\" -gt 400 ]; then echo \"$f is $n lines — consider splitting: move detail to a sub-doc and replace with a pointer.\"; fi; fi; done'"
+          },
+          {
+            "type": "command",
+            "command": "bash -c 'if [ -f docs/STATUS.md ]; then n=$(wc -l < docs/STATUS.md); if [ \"$n\" -gt 150 ]; then echo \"docs/STATUS.md is $n lines — it should be a one-screen dashboard. Move dated session narratives and fix logs to docs/CHANGELOG.md.\"; fi; fi'"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'if [ -f docs/STATUS.md ]; then newer=$(find . \\( -name \"*.py\" -o -name \"*.ts\" -o -name \"*.tsx\" -o -name \"*.js\" \\) -newer docs/STATUS.md -not -path \"*/node_modules/*\" -not -path \"*/.venv/*\" -not -path \"*/.git/*\" 2>/dev/null | head -1); if [ -n \"$newer\" ]; then echo \"docs/STATUS.md may be stale — source files have changed since it was last updated.\"; fi; fi'"
+          }
+        ]
+      }
+    ]
+  }
+}

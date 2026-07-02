@@ -1,0 +1,18 @@
+---
+description: [project] domain context — invariants, patterns, and anti-patterns for any Cursor AI feature (Chat, Composer, Bugbot).
+alwaysApply: true
+---
+
+# [project] — Domain Context for Cursor
+
+[One paragraph: what the project is + stack. Point to docs/SPEC.md and docs/STATUS.md.]
+
+## Load-bearing invariants — flag any PR that risks these
+
+[Each invariant: the rule, where the constant/gate/test lives, the known anti-pattern.]
+
+## Pointers
+
+- `docs/SPEC.md` — architecture
+- `docs/GLOSSARY.md` — domain terms (use exactly; no synonyms)
+- `docs/STATUS.md` — current numbers
