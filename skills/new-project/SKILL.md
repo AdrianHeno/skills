@@ -1,6 +1,6 @@
 ---
 name: new-project
-description: Scaffold a new project using Context-Driven Development — sets up desloppify, installs agent-specific tooling, and interviews the user to produce an AGENTS.md + Agent Context Stack (docs/SPEC.md, GLOSSARY.md, STATUS.md, decisions/). Supports Claude Code, Cursor, Copilot, Windsurf, and Codex. Use when starting a new project, when asked to "init project" or "set up a new project" for a repo, or when AGENTS.md and docs/ are missing.
+description: Scaffold a new project using Context-Driven Development — sets up desloppify, installs agent-specific tooling, and interviews the user to produce an AGENTS.md + Agent Context Stack (docs/SPEC.md, GLOSSARY.md, STATUS.md, decisions/). Supports Claude Code, Cursor, Copilot, Windsurf, and Codex. Also detects an existing AGENTS.md and offers to resync just the "When to Use Skills" section — use this when upstream skills have been renamed or added. Use when starting a new project, when asked to "init project" or "set up a new project" for a repo, when AGENTS.md and docs/ are missing, or when the user asks to "resync skills" or "update the When to Use Skills section".
 ---
 
 # New Project
@@ -8,6 +8,52 @@ description: Scaffold a new project using Context-Driven Development — sets up
 Scaffold a new project using **Context-Driven Development** — a practice of maintaining an **Agent Context Stack** (`AGENTS.md` + structured `docs/`) that gives any AI agent durable, phase-aware project context that survives conversation compression, multi-agent handoffs, and new sessions.
 
 Work interactively. Ask one topic at a time, offer a recommendation for each, wait for the answer before moving on.
+
+---
+
+## Phase 0 — Detect existing setup
+
+Before starting the full interview, check whether the project already has an Agent Context Stack:
+
+```bash
+ls AGENTS.md docs/SPEC.md docs/GLOSSARY.md 2>/dev/null
+```
+
+**If none of those files exist**, this is a fresh project — proceed to Phase 1.
+
+**If `AGENTS.md` exists**, the project was already scaffolded (possibly by an older version of this skill). Present the user with three options:
+
+> This project already has an Agent Context Stack. What would you like to do?
+>
+> 1. **Resync the "When to Use Skills" section only** — safe. Replaces just that one section with the current template so guidance stays current with upstream skill renames and new skills. Everything else in AGENTS.md is preserved.
+> 2. **Full interview from scratch** — will overwrite your tuned content. Only choose this if you want to rebuild the stack.
+> 3. **Cancel** — leave everything as-is.
+
+### Option 1 — Resync skills section
+
+If the user picks option 1:
+
+1. Read the existing `AGENTS.md`.
+2. Locate the `## When to Use Skills` heading and the section it introduces (from that heading up to but not including the next `## ` heading, or end of file).
+3. Read the current template from `templates/agents-md-sections.md` — specifically the block under the `## When to Use Skills (Claude Code only)` heading (inside the fenced markdown block).
+4. Replace the old section with the current template block in `AGENTS.md`.
+5. Also update the `CLAUDE.md` symlink target if `CLAUDE.md` is a regular file rather than a symlink (rare — check first with `[ -L CLAUDE.md ]`).
+6. Show the user the diff and offer to commit:
+   ```bash
+   git add AGENTS.md
+   git commit -m "chore: resync When to Use Skills section from /new-project"
+   ```
+7. **Stop here.** Do not run Phase 1 or Phase 2.
+
+If there is no `## When to Use Skills` section in the existing `AGENTS.md` (e.g. the project was scaffolded very early, before that section existed), tell the user, and offer to append the current template as a new section instead. Ask before writing.
+
+### Option 2 — Full interview
+
+Proceed to Phase 1. Warn the user first: "This will produce a fresh AGENTS.md. Your existing file will be overwritten — make sure it's committed to git first."
+
+### Option 3 — Cancel
+
+Exit silently. Do not modify anything.
 
 ---
 
