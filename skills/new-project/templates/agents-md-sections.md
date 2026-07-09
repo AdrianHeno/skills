@@ -83,10 +83,13 @@ compaction from eating the planning context that makes it useful.
 ## When to Use Skills
 
 - **`/grill-with-docs`** — before implementing anything non-trivial. Stress-tests the plan against GLOSSARY.md and docs/decisions/, and updates docs inline as decisions crystallise. Use it before writing code for a new module or feature.
+- **`/domain-modeling`** — when a new domain concept surfaces or an existing term feels imprecise. The *active* discipline for building the ubiquitous language — challenge terms, invent edge cases, record decisions. Complements GLOSSARY.md.
+- **`/to-spec`** — when the conversation has produced enough shared understanding to write it down. Turns the current conversation into a spec on the issue tracker. Supports Spec Before Code.
 - **`/improve-codebase-architecture`** — when an interface is getting complicated or a module feels tangled. Run it before starting a new phase, not just reactively.
+- **`/implement`** — when starting a spec or a set of tickets. Runs `/tdd` at pre-agreed seams and `/code-review` at the end. Pair with `/handoff` to delegate the whole implementation to a sub-agent.
 - **`/tdd`** — for any business logic, data pipeline, or backend module. Write the failing test first.
-- **`/diagnose`** — when something is broken and the cause isn't obvious. Don't just start changing code.
-- **`/to-issues`** — when turning a plan, spec, or conversation into tracked GitHub issues.
+- **`/diagnosing-bugs`** — when something is broken and the cause isn't obvious. Don't just start changing code.
+- **`/to-tickets`** — when breaking a plan or spec into tracer-bullet vertical slices on the issue tracker.
 - **`/triage`** — when the user asks to review, prioritise, or manage open issues.
 - **`/handoff`** — when starting any meaningful implementation task. Plan here, implement in a sub-agent. Keeps this conversation focused on decisions.
 - **`desloppify next`** — at the end of each phase before marking it complete. Not optional.
