@@ -13,13 +13,13 @@ Work interactively. Ask one topic at a time, offer a recommendation for each, wa
 
 ## Phase 0 — Detect existing setup
 
-Before starting the full interview, check whether the project already has an Agent Context Stack:
+Before starting the full interview, check whether the project already has an `AGENTS.md`:
 
 ```bash
-ls AGENTS.md docs/SPEC.md docs/GLOSSARY.md 2>/dev/null
+[ -f AGENTS.md ] && echo "existing" || echo "fresh"
 ```
 
-**If none of those files exist**, this is a fresh project — proceed to Phase 1.
+**If the file does not exist**, this is a fresh project — proceed to Phase 1.
 
 **If `AGENTS.md` exists**, the project was already scaffolded (possibly by an older version of this skill). Present the user with three options:
 
@@ -37,7 +37,7 @@ If the user picks option 1:
 2. Locate the `## When to Use Skills` heading and the section it introduces (from that heading up to but not including the next `## ` heading, or end of file).
 3. Read the current template from `templates/agents-md-sections.md` — specifically the block under the `## When to Use Skills (Claude Code only)` heading (inside the fenced markdown block).
 4. Replace the old section with the current template block in `AGENTS.md`.
-5. Also update the `CLAUDE.md` symlink target if `CLAUDE.md` is a regular file rather than a symlink (rare — check first with `[ -L CLAUDE.md ]`).
+5. Check that `CLAUDE.md` is still a symlink to `AGENTS.md` (`[ -L CLAUDE.md ]`) so Claude Code auto-loads the updated content. If it's a regular file (someone broke the symlink), tell the user and offer to restore it: `rm CLAUDE.md && ln -s AGENTS.md CLAUDE.md`. Ask before running.
 6. Show the user the diff and offer to commit:
    ```bash
    git add AGENTS.md
@@ -93,7 +93,7 @@ Run:
 npx skills@latest add mattpocock/skills
 ```
 
-Let the user select which skills they want. When they're done, confirm what was installed.
+Let the user select which skills they want. **`setup-matt-pocock-skills` is required for Step 1.7** — make sure the user includes it in their selection. Other recommended defaults: `grill-with-docs`, `domain-modeling`, `tdd`, `diagnosing-bugs`, `to-tickets`, `triage`, `handoff`, `implement`, `to-spec`. When done, confirm what was installed.
 
 ### Step 1.4 — Set up desloppify
 
@@ -146,7 +146,7 @@ Ask:
 ```bash
 gh issue create --repo REPO --title "..." --body "..." --label "backlog"
 ```
-Record this in the `## Agent skills` block of `AGENTS.md`.
+The **Backlog** line in `templates/agents-md-sections.md` gets added to the "What To Do Before Starting Any Task" section during Phase 3 — no separate block.
 
 **If no:** Ask where their backlog lives (local markdown, Linear, Jira, etc.) and record accordingly.
 
@@ -157,18 +157,26 @@ Record this in the `## Agent skills` block of `AGENTS.md`.
 Copy `templates/claude-settings-hooks.json` (in this skill's directory) to the project's `.claude/settings.json`. If the project already has a `.claude/settings.json`, merge the `hooks` arrays instead of overwriting. All hooks are shell commands — zero token cost. They defend against the two ways context rots: bloat (size guards) and staleness (freshness guards).
 
 **What each hook does:**
-- **STATUS.md staleness** (SessionStart + Stop) — compares git history: warns when source has been committed since STATUS.md was last updated. Fires at session start (when stale context would mis-brief the agent) and at turn end (when the agent can still fix it). Git-based, so it survives fresh clones and worktrees, unlike file timestamps.
-- **STATUS.md freshness date** (SessionStart) — warns when the first `YYYY-MM-DD` date in STATUS.md (its "as of" stamp) is more than 14 days old.
+- **STATUS.md staleness** (SessionStart) — compares git history: warns when source has been committed since STATUS.md was last updated. Git-based, so it survives fresh clones and worktrees, unlike file timestamps.
+- **STATUS.md freshness date** (SessionStart) — warns when the `as of YYYY-MM-DD` stamp in STATUS.md is more than 14 days old. Anchors on the "as of" phrase so random 8-digit-with-dashes strings elsewhere in the file don't match.
 - **AGENTS.md / CLAUDE.md size** (PostToolUse) — warns if either exceeds 250 lines
 - **docs/ file size** (PostToolUse) — warns if SPEC.md or GLOSSARY.md exceeds 400 lines
 - **STATUS.md size** (PostToolUse) — warns if STATUS.md exceeds 150 lines; it must stay a one-screen dashboard, with dated content moved to CHANGELOG.md
-- **Dead pointers** (PostToolUse) — extracts backtick-quoted file paths from AGENTS.md and docs/*.md and warns about any that don't exist on disk. Catches docs referencing paths that were moved, renamed, or never existed.
+- **Dead pointers** (PostToolUse) — extracts backtick-quoted paths from AGENTS.md and docs/*.md and warns about any that don't exist on disk. Skips paths inside code fences (so shell commands don't trigger it) and only checks paths under recognised project roots (`docs/`, `src/`, `app/`, `lib/`, `scripts/`, `tests/`, `packages/`) to avoid false positives on arbitrary strings.
 
 ### Step 1.7 — Run /setup-matt-pocock-skills (Claude Code only)
 
 **Skip this step if `IS_CLAUDE_CODE` is false.**
 
-Run `/setup-matt-pocock-skills` now. This configures the issue tracker, triage labels, and domain doc layout for the engineering skills. Walk through it before continuing.
+Check first that the `setup-matt-pocock-skills` skill was actually installed in Step 1.3:
+
+```bash
+ls ~/.claude/skills/setup-matt-pocock-skills/SKILL.md 2>/dev/null && echo "installed" || echo "missing"
+```
+
+**If installed**, run `/setup-matt-pocock-skills` now. It configures the issue tracker, triage labels, and domain doc layout for the engineering skills. Walk through it before continuing.
+
+**If missing**, tell the user: "The `setup-matt-pocock-skills` skill wasn't selected in Step 1.3 — the engineering skills won't know your issue tracker or triage labels. Either re-run `npx skills@latest add mattpocock/skills` to add it, or continue and configure those manually in AGENTS.md later." Offer to re-run the installer.
 
 ---
 
@@ -365,9 +373,8 @@ Assemble all answered sections into `AGENTS.md` using the Agent Context Stack st
 14. Monetisation Boundaries (if applicable)
 15. Multi-Agent Workflow (Claude Code only, if applicable)
 16. PR Review (if Section J answered yes)
-17. Agent skills block (Claude Code only — from `/setup-matt-pocock-skills` output)
 
-Sections 6–12, 15, and 16 have verbatim templates in `templates/agents-md-sections.md` (see the Templates section below). If GitHub Issues is the backlog, add the backlog line from the same file to section 4.
+Sections 6–12, 15, and 16 have verbatim templates in `templates/agents-md-sections.md`. If GitHub Issues is the backlog, add the backlog line from the same file into section 4 ("What To Do Before Starting Any Task"). Whatever `/setup-matt-pocock-skills` (Step 1.7) wrote into `AGENTS.md` — issue tracker configuration, triage labels, domain doc pointers — is left as-is; do not duplicate it.
 
 ### `CLAUDE.md` (Claude Code only)
 
@@ -404,9 +411,28 @@ All verbatim artefacts live as real files next to this SKILL.md — read them, s
 
 Replace `[Project Name]` / `[project]` with the actual name in every copied file, and `[YYYY-MM-DD]` in STATUS.md with today's date. In the Multi-Agent Workflow section, fill in the project's shared-file list and full-CI command. In the Security Boundaries section, always write the baseline; append the Section H answers if any.
 
+### Verify
+
+Before committing, verify the scaffold actually did what it claimed:
+
+```bash
+# All files that should exist
+ls -la AGENTS.md CLAUDE.md docs/SPEC.md docs/GLOSSARY.md docs/STATUS.md docs/CHANGELOG.md docs/decisions/000-template.md 2>&1
+# Symlink integrity (Claude Code only)
+[ -L CLAUDE.md ] && readlink CLAUDE.md
+# .gitignore was updated (Claude Code + desloppify)
+grep -q "^\.desloppify/" .gitignore && echo ".gitignore ok"
+# Hooks JSON parses (Claude Code only)
+[ -f .claude/settings.json ] && python3 -c "import json; json.load(open('.claude/settings.json'))" && echo "hooks JSON ok"
+```
+
+If any of these fail, fix them before continuing. Silent scaffolding gaps become dead-pointer warnings later.
+
+For Claude Code, tell the user: "Restart Claude Code (or open a new session) so the SessionStart hooks fire and the AGENTS.md loads into system context. This session was started before those files existed."
+
 ### Commit
 
-Once files are written, offer to run (include `.cursor/` only if it was created):
+Once files are verified, offer to run (include `.cursor/` only if it was created):
 ```bash
 git add AGENTS.md CLAUDE.md docs/ .claude/ .cursor/
 git commit -m "chore: add AGENTS.md and docs scaffolding"

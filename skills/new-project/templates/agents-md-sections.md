@@ -102,19 +102,10 @@ compaction from eating the planning context that makes it useful.
 ````markdown
 ## Memory vs the Agent Context Stack
 
-Claude Code's harness memory is private to one agent; this stack is shared,
-git-versioned, and PR-reviewed. The boundary:
-
-- **Stack (files)** — anything shared, durable, or decision-shaping: domain
-  terms, architecture decisions, project status, conventions, gotchas that
-  affect any contributor.
-- **Memory (private)** — personal user preferences, and provisional
-  observations not yet validated.
-
-Memory is a staging area, not a second home. When a private observation turns
-out to matter to others, promote it into the relevant `docs/` file via a normal
-reviewed change and delete the memory copy. On any conflict between memory and
-the stack, the stack wins — it was reviewed; memory wasn't.
+Shared, durable, or decision-shaping knowledge lives in these files. Memory is
+a private staging area for personal preferences and provisional observations.
+When a memory starts to matter to others, promote it into the relevant `docs/`
+file and delete the memory. The stack wins on any conflict — it was reviewed.
 ````
 
 ---
@@ -180,10 +171,12 @@ Two-layer review on every non-trivial PR, plus CI:
 1. **Review bot (automatic, generic-bug pass)** — [bot name, e.g. Cursor Bugbot]
    auto-comments on PRs at open. Do not merge until it has run and blocking
    concerns are addressed.
-2. **Domain reviewer (spawned)** — for PRs touching core or shared modules:
-   ```
-   Agent({ subagent_type: "Plan", prompt: "Read docs/PR-REVIEW-CHECKLIST.md and review PR #N. Fetch the diff with 'gh pr diff N'. Return the structured concerns list from that file." })
-   ```
+2. **Domain reviewer** — for PRs touching core or shared modules, run the
+   checklist in `docs/PR-REVIEW-CHECKLIST.md` against the diff.
+   - **Claude Code:** spawn a read-only sub-agent — `Agent({ subagent_type: "Plan", prompt: "Read docs/PR-REVIEW-CHECKLIST.md and review PR #N. Fetch the diff with 'gh pr diff N'. Return the structured concerns list from that file." })`
+   - **Cursor / Copilot / Windsurf:** run the checklist inline against `gh pr diff N`, or ask an agent session in a fresh chat to work through it.
+   - **Manual:** open the PR diff and step through the checklist yourself.
+
    The checklist codifies the project invariants a generic bot doesn't know.
 ````
 
