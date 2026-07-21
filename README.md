@@ -87,7 +87,7 @@ Defensive programming anticipates failure modes and adds guards. CDD applies the
 AGENTS.md              # working principles, load-bearing invariants, pre-task checklist,
                        # code style, current phase (pointer only), skill guidance,
                        # security boundaries — read by all agents
-CLAUDE.md              # symlink to AGENTS.md (Claude Code auto-loads this filename)
+CLAUDE.md              # one-line `@AGENTS.md` import (Claude Code auto-loads this filename)
 docs/
   SPEC.md              # architecture and key interfaces — read before any non-trivial task
   GLOSSARY.md          # domain terms (ubiquitous language) — no synonyms
@@ -150,6 +150,6 @@ Scaffolds a new project using Context-Driven Development. Asks which agent(s) yo
    - Multi-agent worktree workflow *(Claude Code only, optional)* — battle-tested rules: PR-before-long-validation, explicit-path staging, append-only shared files, honest deferral
    - Two-layer PR review *(optional)* — a review bot for generic bugs + a domain checklist (`docs/PR-REVIEW-CHECKLIST.md`) run by a spawned read-only agent; generates a `.cursor/rules/` file for Cursor users
 9. Writes `## Conversation Strategy`, `## When to Use Skills`, and `## Memory vs the Agent Context Stack` into `AGENTS.md` *(Claude Code only)*, plus a `## Phase-End Truth-Up` checklist for all agents — verify every factual claim in the stack against reality before closing a phase
-10. Creates `AGENTS.md` as the primary file; creates `CLAUDE.md` as a symlink to it *(Claude Code only)*
+10. Creates `AGENTS.md` as the primary file; creates `CLAUDE.md` as a one-line `@AGENTS.md` import *(Claude Code only)*
 11. Creates all `docs/` stubs and `docs/decisions/` with an ADR template
 12. Offers to commit everything

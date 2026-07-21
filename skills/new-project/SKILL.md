@@ -37,7 +37,7 @@ If the user picks option 1:
 2. Locate the `## When to Use Skills` heading and the section it introduces (from that heading up to but not including the next `## ` heading, or end of file).
 3. Read the current template from `templates/agents-md-sections.md` — specifically the block under the `## When to Use Skills (Claude Code only)` heading (inside the fenced markdown block).
 4. Replace the old section with the current template block in `AGENTS.md`.
-5. Check that `CLAUDE.md` is still a symlink to `AGENTS.md` (`[ -L CLAUDE.md ]`) so Claude Code auto-loads the updated content. If it's a regular file (someone broke the symlink), tell the user and offer to restore it: `rm CLAUDE.md && ln -s AGENTS.md CLAUDE.md`. Ask before running.
+5. Check that `CLAUDE.md` still imports `AGENTS.md` — the file should be a single line reading `@AGENTS.md` (or a legacy symlink to `AGENTS.md` from before the import-syntax switch). If it's neither, tell the user and offer to restore the import: `echo "@AGENTS.md" > CLAUDE.md`. Ask before running. Legacy symlinks work fine — leave them unless the user wants to migrate.
 6. Show the user the diff and offer to commit:
    ```bash
    git add AGENTS.md
@@ -159,7 +159,7 @@ Copy `templates/claude-settings-hooks.json` (in this skill's directory) to the p
 **What each hook does:**
 - **STATUS.md staleness** (SessionStart) — compares git history: warns when source has been committed since STATUS.md was last updated. Git-based, so it survives fresh clones and worktrees, unlike file timestamps.
 - **STATUS.md freshness date** (SessionStart) — warns when the `as of YYYY-MM-DD` stamp in STATUS.md is more than 14 days old. Anchors on the "as of" phrase so random 8-digit-with-dashes strings elsewhere in the file don't match.
-- **AGENTS.md / CLAUDE.md size** (PostToolUse) — warns if either exceeds 250 lines
+- **AGENTS.md size** (PostToolUse) — warns if AGENTS.md exceeds 250 lines. CLAUDE.md is a one-line `@AGENTS.md` import so it doesn't need its own check.
 - **docs/ file size** (PostToolUse) — warns if SPEC.md or GLOSSARY.md exceeds 400 lines
 - **STATUS.md size** (PostToolUse) — warns if STATUS.md exceeds 150 lines; it must stay a one-screen dashboard, with dated content moved to CHANGELOG.md
 - **Dead pointers** (PostToolUse) — extracts backtick-quoted paths from AGENTS.md and docs/*.md and warns about any that don't exist on disk. Skips paths inside code fences (so shell commands don't trigger it) and only checks paths under recognised project roots (`docs/`, `src/`, `app/`, `lib/`, `scripts/`, `tests/`, `packages/`) to avoid false positives on arbitrary strings.
@@ -182,7 +182,30 @@ ls ~/.claude/skills/setup-matt-pocock-skills/SKILL.md 2>/dev/null && echo "insta
 
 ## Phase 2 — Interview
 
-Ask one section at a time. For each, present a recommendation grounded in Context-Driven Development principles, then wait. Adapt the recommendation to what you already know about the project from the repo.
+Ask one section at a time. Present a recommendation grounded in Context-Driven Development principles, then wait. Adapt the recommendation to what you already know about the project from the repo.
+
+### How to run this interview
+
+The interview quality determines the AGENTS.md quality. A file full of confident-sounding but vague AI prose is worse than a blank template — it will mis-brief every future session that reads it. Follow these rules:
+
+- **Never invent facts.** Every claim in the generated AGENTS.md must come from the user or from the repo. If you don't know a command, a version, or a name — *ask*. `TBD — user to confirm` is acceptable; a plausible-sounding guess is not.
+- **Never accept filler.** Reject vague adjectives ("fast", "clean", "robust"), template echoes ("this project handles user data"), and answers that restate the question. If the user's answer wouldn't help a future session make a decision, ask the follow-up that fixes it.
+- **One substantive question per turn.** Do not stack. Offering multiple *options* for one question is fine; bundling a few trivial housekeeping items (project name + team) is fine; asking three distinct questions that each need thought is not.
+- **You are the gate, not the ghostwriter.** Push back when a section is thin. It is better to spend the user's time now than to let a vague AGENTS.md mis-brief the next fifty sessions.
+- **Show progress.** Once past Section A, show a compact tracker at the top of each turn so the user sees where they are:
+
+  ```
+  | # | Section | Status |
+  |---|---|---|
+  | A | What is this project | ✅ |
+  | B | Working principles + invariants | 🟡 in progress |
+  | C | Before starting any task | 🔴 |
+  ...
+  ```
+
+  Markers: ✅ locked · 🟡 in progress (current section) · 🔴 not started.
+
+- **Lock sections explicitly.** When a section clears the bar, show the agreed wording as a blockquote prefixed with ✅ so the user sees exactly what will be written into AGENTS.md, then move on. If they later want to revise, they can — but locking creates momentum.
 
 ---
 
@@ -378,15 +401,13 @@ Sections 6–12, 15, and 16 have verbatim templates in `templates/agents-md-sect
 
 ### `CLAUDE.md` (Claude Code only)
 
-**If `IS_CLAUDE_CODE` is true**, create `CLAUDE.md` as a symlink to `AGENTS.md`:
+**If `IS_CLAUDE_CODE` is true**, create `CLAUDE.md` as a one-line file that imports `AGENTS.md` using Claude Code's file-import syntax:
 
 ```bash
-ln -s AGENTS.md CLAUDE.md
+echo "@AGENTS.md" > CLAUDE.md
 ```
 
-Claude Code auto-loads `CLAUDE.md` at startup. The symlink means the content lives once in `AGENTS.md` and all agents share it — no duplication.
-
-If the filesystem doesn't support symlinks (e.g. Windows without dev mode), copy the file instead and note that both files must be kept in sync.
+Claude Code auto-loads `CLAUDE.md` at startup and follows `@` imports, pulling the full `AGENTS.md` content into persistent system context. The content lives once in `AGENTS.md` and every agent (Cursor, Copilot, Codex, etc.) reads the same file — no duplication, no sync problem, and works on every platform including Windows without symlink support.
 
 ---
 
@@ -418,8 +439,8 @@ Before committing, verify the scaffold actually did what it claimed:
 ```bash
 # All files that should exist
 ls -la AGENTS.md CLAUDE.md docs/SPEC.md docs/GLOSSARY.md docs/STATUS.md docs/CHANGELOG.md docs/decisions/000-template.md 2>&1
-# Symlink integrity (Claude Code only)
-[ -L CLAUDE.md ] && readlink CLAUDE.md
+# CLAUDE.md imports AGENTS.md (Claude Code only) — accept @-import or legacy symlink
+[ -f CLAUDE.md ] && { grep -q "^@AGENTS.md" CLAUDE.md && echo "CLAUDE.md imports AGENTS.md"; } || [ -L CLAUDE.md ] && echo "CLAUDE.md is a legacy symlink"
 # .gitignore was updated (Claude Code + desloppify)
 grep -q "^\.desloppify/" .gitignore && echo ".gitignore ok"
 # Hooks JSON parses (Claude Code only)

@@ -20,7 +20,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'for f in AGENTS.md CLAUDE.md; do if [ -f \"$f\" ]; then n=$(wc -l < \"$f\"); if [ \"$n\" -gt 250 ]; then echo \"$f is $n lines — over the 250-line budget. Suggest a refactor session: move detail into docs/ and replace with pointers.\"; fi; fi; done'"
+            "command": "bash -c 'if [ -f AGENTS.md ]; then n=$(wc -l < AGENTS.md); if [ \"$n\" -gt 250 ]; then echo \"AGENTS.md is $n lines — over the 250-line budget. Suggest a refactor session: move detail into docs/ and replace with pointers.\"; fi; fi'"
           },
           {
             "type": "command",
